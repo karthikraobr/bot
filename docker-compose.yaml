@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  # Go application service
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"  # Replace 8080 with your application port
+    # Wait for Postgres to be ready before starting the app
+    restart: always
+    depends_on:
+       - db
+    environment:
+      # Set environment variables for database connection
+      - DATABASE_URL=postgres://user:password@db:5432/dbname
+    networks:
+    - app-network
+
+
+  # Postgres database service
+  db:
+    image: postgres
+    environment:
+      # Set Postgres environment variables (optional, secure passwords are recommended)
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=dbname
+    # Persist database data (optional, comment out for non-persistent data)
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+volumes:
+  # Define volume for persistent Postgres data (optional)
+  postgres_data: {}
+
+networks:
+  app-network:
+    driver: bridge
