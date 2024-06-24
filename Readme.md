@@ -15,6 +15,7 @@ A simple bot implemented with gorilla websocket. This repo consists of a websock
 
 - Implement all use cases
 - Tests
+- Docs and comments
 - CI/CD
 - Database operations
 - Understand chat context - what the user is requesting
