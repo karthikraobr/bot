@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -37,6 +39,7 @@ func main() {
 	defer c.Close()
 
 	done := make(chan struct{})
+	msg := make(chan string)
 
 	go func() {
 		defer close(done)
@@ -46,20 +49,48 @@ func main() {
 				log.Println("read:", err)
 				return
 			}
+			msg <- string(message)
 			log.Printf("recv: %s", message)
 		}
 	}()
 
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+	reponses := []string{"Hi", "Sure, I can do that.", "I'd give it a 5.", ""}
 
+	s := &sync.Once{}
+	s.Do(func() {
+		m := Message{UserID: 1, Message: "Hi"}
+		b, err := json.Marshal(m)
+		if err != nil {
+			log.Println("marshal:", err)
+			return
+		}
+		err = c.WriteMessage(websocket.TextMessage, b)
+		if err != nil {
+			log.Println("write:", err)
+			return
+		}
+	})
 	for {
 		select {
 		case <-done:
 			return
-		case <-ticker.C:
-			m := Message{UserID: generateRandomInt(5, 1), Message: getRandomMessage()}
-			b, err := json.Marshal(m)
+		case m := <-msg:
+			if strings.Contains(m, "Thank you") {
+				// Cleanly close the connection by sending a close message and then
+				// waiting (with timeout) for the server to close the connection.
+				err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "1"))
+				if err != nil {
+					log.Println("write close:", err)
+					return
+				}
+			}
+			finalMessage := Message{UserID: 1}
+			if strings.Contains(m, "share your thoughts") {
+				finalMessage.Message = reponses[1]
+			} else {
+				finalMessage.Message = reponses[2]
+			}
+			b, err := json.Marshal(finalMessage)
 			if err != nil {
 				log.Println("marshal:", err)
 				return
@@ -69,21 +100,6 @@ func main() {
 				log.Println("write:", err)
 				return
 			}
-		case <-interrupt:
-			log.Println("interrupt")
-
-			// Cleanly close the connection by sending a close message and then
-			// waiting (with timeout) for the server to close the connection.
-			err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-			if err != nil {
-				log.Println("write close:", err)
-				return
-			}
-			select {
-			case <-done:
-			case <-time.After(time.Second):
-			}
-			return
 		}
 	}
 }

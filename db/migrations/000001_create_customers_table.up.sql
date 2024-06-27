@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS Reviews (
   deleted_at       timestamp without time zone
 );
 
+ALTER TABLE Reviews
+ADD CONSTRAINT reviews_product_customer
+UNIQUE (product_id, customer_id);
+
 CREATE TABLE IF NOT EXISTS Chats (
   id SERIAL PRIMARY KEY,  -- Unique identifier for each review (auto-increment)
   customer_id INT REFERENCES Customers(id) ON DELETE SET NULL,

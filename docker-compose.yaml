@@ -12,7 +12,7 @@ services:
        - db
     environment:
       # Set environment variables for database connection
-      - DATABASE_URL=postgres://user:password@db:5432/dbname
+      - DATABASE_URL=postgres://user:password@db:5432/customers?sslmode=disable
     networks:
     - app-network
 
@@ -24,7 +24,7 @@ services:
       # Set Postgres environment variables (optional, secure passwords are recommended)
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=dbname
+      - POSTGRES_DB=customers
     # Persist database data (optional, comment out for non-persistent data)
     ports:
       - "5432:5432"

@@ -2,26 +2,22 @@ package store
 
 import (
 	"context"
-	"database/sql"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+	psql "github.com/karthikraobr/bot/internal/querier"
 	_ "github.com/lib/pq"
 )
 
 type store struct {
-	db *sql.DB
+	querier psql.Querier
 }
 
-func NewStore(ctx context.Context, connString string) (*store, error) {
-	db, err := sql.Open("postgres", connString)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.PingContext(ctx); err != nil {
-		return nil, err
-	}
+func NewStore(ctx context.Context, pool *pgxpool.Pool) *store {
 	return &store{
-		db: db,
-	}, nil
+		querier: psql.New(pool),
+	}
 }
 
-// Do database operations here
+func (s *store) InsertReview(ctx context.Context, arg psql.InsertReviewParams) (int32, error) {
+	return s.querier.InsertReview(ctx, arg)
+}

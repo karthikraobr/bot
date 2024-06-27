@@ -1,19 +1,26 @@
 package main
 
 import (
-	"flag"
+	"context"
 	"log"
 	"net/http"
 
+	"github.com/karthikraobr/bot/internal/db"
 	"github.com/karthikraobr/bot/internal/infra/server"
 )
 
-var addr = flag.String("addr", "0.0.0.0:8080", "http service address")
-
 func main() {
-	flag.Parse()
-	server := server.NewServer()
+	ctx := context.Background()
+	c, err := Load()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+	db, err := db.NewDB(ctx, c.DSN)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+	server := server.NewServer(ctx, db)
 	http.Handle("/", server.Router())
-	log.Printf("server started at %s", *addr)
-	log.Fatal(http.ListenAndServe(*addr, nil))
+	log.Printf("server started at %s", c.Address)
+	log.Fatal(http.ListenAndServe(c.Address, nil))
 }
